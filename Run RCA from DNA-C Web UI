@@ -1,0 +1,71 @@
+To access the System Analyzer tool, do the following:
+
+Click the menu icon and choose System > System Health to open the System Health window.
+
+From the Tools drop-down menu, choose System Analyzer.
+
+Before you use this tool, note the following points:
+
+Only admin users can start system analysis runs, download the resulting log files, and delete completed runs. All users can open and view the System Analysis Details slide-in pane for a selected run.
+
+Run System Analyzer 
+
+Complete the following procedure in order to start a System Analyzer run.
+
+Step 1	
+
+Do one of the following in the System Analyzer page, depending on whether the System Analyzer Runs table is displayed:
+
+If the table is not displayed, it indicates that either previous runs have been deleted or a run hasn’t been completed yet. Click New System Analyzer Run.
+
+If the System Analyzer Runs table is displayed, click Add.
+
+The New System Analyzer Run slide-in pane opens.
+
+
+Step 2	
+
+In the Name field, enter a name for the run.
+
+Ensure that the name you enter is unique and only contains alphanumeric characters. Special characters are not allowed.
+
+
+Step 3	
+
+(Optional) In the Description field, enter a brief description of the run you are about to start.
+
+You can enter a description that contains a maximum of 250 characters.
+
+
+Step 4	
+
+(Optional) In the Notes field, enter any additional information (up to a maximum of 250 characters) you want to provide for the run.
+
+
+Step 5	
+
+In the Select a System Analyzer to run area, click the radio button for the "System".
+
+
+Step 6	
+
+Click Run.
+
+
+
+
+View/Download System Analyzer Run Details
+
+From the System Analysis Details slide-in pane, you can view additional information for the selected run, such as the total file size of the log files that were retrieved and the relevant Cisco DNA Center components. You can also identify any log files that encountered an issue during the run.
+
+From here, you can also do the following:
+
+In the Search Table field, enter a search string to filter the information that’s displayed.
+
+Click Download to download the log files that were retrieved as a .tar.gz file.
+
+
+
+
+
+
