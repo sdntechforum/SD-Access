@@ -1,0 +1,136 @@
+# class map type control subscriber, and it is used to match specific behavior or traffic: you can use default class - class-map always.
+
+class-map type control subscriber match-all AAA_SVR_DOWN_AUTHD_HOST
+ match result-type aaa-timeout
+ match authorization-status authorized
+!
+class-map type control subscriber match-all AAA_SVR_DOWN_UNAUTHD_HOST
+ match result-type aaa-timeout
+ match authorization-status unauthorized
+!
+class-map type control subscriber match-all AUTHC_SUCCESS-AUTHZ_FAIL
+ match authorization-status unauthorized
+ match result-type success
+!
+class-map type control subscriber match-all DOT1X
+ match method dot1x
+!
+class-map type control subscriber match-all DOT1X_FAILED
+ match method dot1x
+ match result-type method dot1x authoritative
+!
+class-map type control subscriber match-all DOT1X_MEDIUM_PRIO
+ match authorizing-method-priority gt 20
+!
+class-map type control subscriber match-all DOT1X_NO_RESP
+ match method dot1x
+ match result-type method dot1x agent-not-found
+!
+class-map type control subscriber match-all DOT1X_TIMEOUT
+ match method dot1x
+ match result-type method dot1x method-timeout
+!
+class-map type control subscriber match-any IN_CRITICAL_AUTH_CLOSED_MODE
+ match activated-service-template DefaultCriticalAuthVlan_SRV_TEMPLATE
+ match activated-service-template DefaultCriticalVoice_SRV_TEMPLATE
+!
+class-map type control subscriber match-all MAB
+ match method mab
+!
+class-map type control subscriber match-all MAB_FAILED
+ match method mab
+ match result-type method mab authoritative
+!
+class-map type control subscriber match-none NOT_IN_CRITICAL_AUTH_CLOSED_MODE
+ match activated-service-template DefaultCriticalAuthVlan_SRV_TEMPLATE
+ match activated-service-template DefaultCriticalVoice_SRV_TEMPLATE
+!
+#In event configuration, you have the possibility to define how classes can be evaluated:how actions can be executed in case your class is matched
+!
+policy-map type control subscriber PMAP_DefaultWiredDot1xClosedAuth_1X_MAB
+ event session-started match-all
+  10 class always do-until-failure
+   10 authenticate using dot1x retries 2 retry-time 0 priority 10
+ event authentication-failure match-first
+  5 class DOT1X_FAILED do-until-failure
+   10 terminate dot1x
+   20 authenticate using mab priority 20
+  10 class AAA_SVR_DOWN_UNAUTHD_HOST do-until-failure
+   30 authorize
+   40 pause reauthentication
+  20 class AAA_SVR_DOWN_AUTHD_HOST do-until-failure
+   10 pause reauthentication
+   20 authorize
+  30 class DOT1X_NO_RESP do-until-failure
+   10 terminate dot1x
+   20 authenticate using mab priority 20
+  40 class MAB_FAILED do-until-failure
+   10 terminate mab
+   20 authentication-restart 60
+  50 class DOT1X_TIMEOUT do-until-failure
+   10 terminate dot1x
+   20 authenticate using mab priority 20
+  60 class always do-until-failure
+   10 terminate dot1x
+   20 terminate mab
+   30 authentication-restart 60
+ event aaa-available match-all
+  10 class IN_CRITICAL_AUTH_CLOSED_MODE do-until-failure
+   10 clear-session
+  20 class NOT_IN_CRITICAL_AUTH_CLOSED_MODE do-until-failure
+   10 resume reauthentication
+ event agent-found match-all
+  10 class always do-until-failure
+   10 terminate mab
+   20 authenticate using dot1x retries 2 retry-time 0 priority 10
+ event inactivity-timeout match-all
+  10 class always do-until-failure
+   10 clear-session
+ event authentication-success match-all
+ event violation match-all
+  10 class always do-until-failure
+   10 restrict
+ event authorization-failure match-all
+  10 class AUTHC_SUCCESS-AUTHZ_FAIL do-until-failure
+   10 authentication-restart 60
+!
+# Create service templates that bundle together various configurations, including switchport settings, service policies, and access session parameters.
+service-template DEFAULT_LINKSEC_POLICY_MUST_SECURE
+ linksec policy must-secure
+service-template DEFAULT_LINKSEC_POLICY_SHOULD_SECURE
+ linksec policy should-secure
+service-template DEFAULT_CRITICAL_VOICE_TEMPLATE
+ voice vlan
+service-template DEFAULT_CRITICAL_DATA_TEMPLATE
+service-template webauth-global-inactive
+ inactivity-timer 3600 
+service-template DefaultCriticalAuthVlan_SRV_TEMPLATE
+service-template DefaultCriticalVoice_SRV_TEMPLATE
+ voice vlan
+dot1x system-auth-control
+!
+# Create interface templates that define default configurations for ports, including VLANs, QoS settings, and other parameters.
+template DefaultWiredDot1xClosedAuth
+ dot1x pae authenticator
+ dot1x timeout supp-timeout 7
+ dot1x max-req 3
+ switchport access vlan 1000
+ switchport mode access
+ switchport voice vlan 20
+ mab
+ access-session closed
+ access-session port-control auto
+ authentication periodic
+ authentication timer reauthenticate server
+ service-policy type control subscriber PMAP_DefaultWiredDot1xClosedAuth_1X_MAB
+!
+# Use the source template command to apply these templates to ports.
+interface GigabitEthernet1/0/x
+ switchport mode access
+ device-tracking attach-policy IPDT_POLICY
+ dot1x timeout tx-period 7
+ dot1x max-reauth-req 3
+ source template DefaultWiredDot1xClosedAuth
+ spanning-tree portfast
+ spanning-tree bpduguard enable
+ !
